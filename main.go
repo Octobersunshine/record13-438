@@ -22,6 +22,7 @@ type APIResponse struct {
 func main() {
 	addr := flag.String("addr", ":8080", "HTTP listen address")
 	defaultLogPath := flag.String("log", "slowquery.log", "Default slow query log file path")
+	defaultSQLMaxLen := flag.Int("sql-max-len", 1000, "Default max SQL length, 0 means no truncation")
 	flag.Parse()
 
 	http.HandleFunc("/api/slowlog", func(w http.ResponseWriter, r *http.Request) {
@@ -42,12 +43,26 @@ func main() {
 		minTimeStr := r.URL.Query().Get("min_time")
 		sortBy := r.URL.Query().Get("sort")
 		limitStr := r.URL.Query().Get("limit")
+		sqlMaxLenStr := r.URL.Query().Get("sql_max_len")
+
+		sqlMaxLen := *defaultSQLMaxLen
+		if sqlMaxLenStr != "" {
+			if v, err := strconv.Atoi(sqlMaxLenStr); err == nil {
+				sqlMaxLen = v
+			}
+		}
 
 		queries, err := slowlog.ParseFile(logPath)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(APIResponse{Error: err.Error()})
 			return
+		}
+
+		if sqlMaxLen > 0 {
+			for i := range queries {
+				queries[i].TruncateSQL(sqlMaxLen)
+			}
 		}
 
 		if minTimeStr != "" {
@@ -91,6 +106,7 @@ func main() {
 
 	fmt.Printf("Slow query log HTTP server starting on %s\n", *addr)
 	fmt.Printf("Default log file: %s\n", *defaultLogPath)
-	fmt.Printf("Usage: GET /api/slowlog?path=<log_path>&min_time=<seconds>&sort=<time|query_time|rows_examined>&limit=<N>\n")
+	fmt.Printf("Default SQL max length: %d (0 = no truncation)\n", *defaultSQLMaxLen)
+	fmt.Printf("Usage: GET /api/slowlog?path=<log_path>&min_time=<seconds>&sort=<time|query_time|rows_examined>&limit=<N>&sql_max_len=<chars>\n")
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }

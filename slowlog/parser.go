@@ -10,14 +10,16 @@ import (
 )
 
 type SlowQuery struct {
-	Time         time.Time `json:"time"`
-	User         string    `json:"user"`
-	Host         string    `json:"host"`
-	QueryTime    float64   `json:"query_time"`
-	LockTime     float64   `json:"lock_time"`
-	RowsSent     int64     `json:"rows_sent"`
-	RowsExamined int64     `json:"rows_examined"`
-	SQL          string    `json:"sql"`
+	Time          time.Time `json:"time"`
+	User          string    `json:"user"`
+	Host          string    `json:"host"`
+	QueryTime     float64   `json:"query_time"`
+	LockTime      float64   `json:"lock_time"`
+	RowsSent      int64     `json:"rows_sent"`
+	RowsExamined  int64     `json:"rows_examined"`
+	SQL           string    `json:"sql"`
+	SQLLength     int       `json:"sql_length"`
+	SQLTruncated  bool      `json:"sql_truncated"`
 }
 
 var (
@@ -50,6 +52,7 @@ func ParseFile(path string) ([]SlowQuery, error) {
 		if strings.HasPrefix(line, "# Time:") {
 			if current != nil {
 				current.SQL = normalizeSQL(sqlLines)
+				current.SQLLength = len(current.SQL)
 				results = append(results, *current)
 			}
 			current = &SlowQuery{}
@@ -110,6 +113,7 @@ func ParseFile(path string) ([]SlowQuery, error) {
 
 	if current != nil {
 		current.SQL = normalizeSQL(sqlLines)
+		current.SQLLength = len(current.SQL)
 		results = append(results, *current)
 	}
 
@@ -149,4 +153,23 @@ func normalizeSQL(lines []string) string {
 	result := strings.Join(parts, " ")
 	result = strings.TrimSuffix(result, ";")
 	return result
+}
+
+const truncationMarker = "... [truncated]"
+
+func (q *SlowQuery) TruncateSQL(maxLen int) {
+	if maxLen <= 0 {
+		return
+	}
+	if q.SQLLength == 0 {
+		q.SQLLength = len(q.SQL)
+	}
+	if len(q.SQL) > maxLen {
+		cutAt := maxLen - len(truncationMarker)
+		if cutAt < 0 {
+			cutAt = 0
+		}
+		q.SQL = q.SQL[:cutAt] + truncationMarker
+		q.SQLTruncated = true
+	}
 }
