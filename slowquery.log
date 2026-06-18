@@ -31,6 +31,24 @@ ORDER BY day;
 SET timestamp=1750239010;
 SELECT * FROM products WHERE sku = 'SKU-12345-XYZ';
 
+# Time: 2026-06-18T09:31:22.111111Z
+# User@Host: app_user[app_user] @ 192.168.1.102 []  Id: 45756
+# Query_time: 0.765432  Lock_time: 0.000090 Rows_sent: 1  Rows_examined: 248000
+SET timestamp=1750239082;
+SELECT * FROM products WHERE sku = 'SKU-98765-ABC';
+
+# Time: 2026-06-18T09:32:45.222222Z
+# User@Host: app_user[app_user] @ 192.168.1.103 []  Id: 45757
+# Query_time: 0.912345  Lock_time: 0.000110 Rows_sent: 1  Rows_examined: 251000
+SET timestamp=1750239165;
+SELECT * FROM products WHERE sku = 'SKU-55555-DEF';
+
+# Time: 2026-06-18T09:34:01.333333Z
+# User@Host: app_user[app_user] @ 192.168.1.104 []  Id: 45758
+# Query_time: 0.845678  Lock_time: 0.000095 Rows_sent: 1  Rows_examined: 249500
+SET timestamp=1750239241;
+SELECT * FROM products WHERE sku = 'SKU-11111-GHI';
+
 # Time: 2026-06-18T09:45:20.111222Z
 # User@Host: admin[admin] @ localhost []  Id: 45801
 # Query_time: 5.432100  Lock_time: 0.000500 Rows_sent: 50  Rows_examined: 2200000
